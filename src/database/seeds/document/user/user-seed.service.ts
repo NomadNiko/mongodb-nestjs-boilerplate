@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { Model } from 'mongoose';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
-import { UserSchemaClass } from '../../../../users/infrastructure/persistence/document/entities/user.schema';
+import { UserSchemaClass } from '../../../../users/schemas/user.schema';
 
 @Injectable()
 export class UserSeedService {
@@ -15,7 +15,7 @@ export class UserSeedService {
 
   async run() {
     const admin = await this.model.findOne({
-      email: 'admin@example.com',
+      email: 'admin@nomadsoft.us',
     });
 
     if (!admin) {
@@ -23,22 +23,27 @@ export class UserSeedService {
       const password = await bcrypt.hash('secret', salt);
 
       const data = new this.model({
-        email: 'admin@example.com',
+        email: 'admin@nomadsoft.us',
         password: password,
         firstName: 'Super',
         lastName: 'Admin',
         role: {
+          id: RoleEnum.admin.toString(),
           _id: RoleEnum.admin.toString(),
         },
         status: {
+          id: StatusEnum.active.toString(),
           _id: StatusEnum.active.toString(),
         },
       });
       await data.save();
+      console.log('✅ Admin user created: admin@nomadsoft.us');
+    } else {
+      console.log('ℹ️ Admin user already exists: admin@nomadsoft.us');
     }
 
     const user = await this.model.findOne({
-      email: 'john.doe@example.com',
+      email: 'user@nomadsoft.us',
     });
 
     if (!user) {
@@ -46,19 +51,24 @@ export class UserSeedService {
       const password = await bcrypt.hash('secret', salt);
 
       const data = new this.model({
-        email: 'john.doe@example.com',
+        email: 'user@nomadsoft.us',
         password: password,
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: 'Test',
+        lastName: 'User',
         role: {
+          id: RoleEnum.user.toString(),
           _id: RoleEnum.user.toString(),
         },
         status: {
+          id: StatusEnum.active.toString(),
           _id: StatusEnum.active.toString(),
         },
       });
 
       await data.save();
+      console.log('✅ Test user created: user@nomadsoft.us');
+    } else {
+      console.log('ℹ️ Test user already exists: user@nomadsoft.us');
     }
   }
 }

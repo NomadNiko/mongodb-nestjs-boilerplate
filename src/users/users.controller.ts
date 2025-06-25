@@ -31,7 +31,7 @@ import {
 } from '../utils/dto/infinity-pagination-response.dto';
 import { NullableType } from '../utils/types/nullable.type';
 import { QueryUserDto } from './dto/query-user.dto';
-import { User } from './domain/user';
+import { UserSchemaClass } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../roles/roles.guard';
 import { infinityPagination } from '../utils/infinity-pagination';
@@ -48,19 +48,19 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiCreatedResponse({
-    type: User,
+    type: UserSchemaClass,
   })
   @SerializeOptions({
     groups: ['admin'],
   })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createProfileDto: CreateUserDto): Promise<User> {
+  create(@Body() createProfileDto: CreateUserDto): Promise<UserSchemaClass> {
     return this.usersService.create(createProfileDto);
   }
 
   @ApiOkResponse({
-    type: InfinityPaginationResponse(User),
+    type: InfinityPaginationResponse(UserSchemaClass),
   })
   @SerializeOptions({
     groups: ['admin'],
@@ -69,7 +69,7 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() query: QueryUserDto,
-  ): Promise<InfinityPaginationResponseDto<User>> {
+  ): Promise<InfinityPaginationResponseDto<UserSchemaClass>> {
     const page = query?.page ?? 1;
     let limit = query?.limit ?? 10;
     if (limit > 50) {
@@ -90,7 +90,7 @@ export class UsersController {
   }
 
   @ApiOkResponse({
-    type: User,
+    type: UserSchemaClass,
   })
   @SerializeOptions({
     groups: ['admin'],
@@ -102,12 +102,12 @@ export class UsersController {
     type: String,
     required: true,
   })
-  findOne(@Param('id') id: User['id']): Promise<NullableType<User>> {
+  findOne(@Param('id') id: string): Promise<NullableType<UserSchemaClass>> {
     return this.usersService.findById(id);
   }
 
   @ApiOkResponse({
-    type: User,
+    type: UserSchemaClass,
   })
   @SerializeOptions({
     groups: ['admin'],
@@ -120,9 +120,9 @@ export class UsersController {
     required: true,
   })
   update(
-    @Param('id') id: User['id'],
+    @Param('id') id: string,
     @Body() updateProfileDto: UpdateUserDto,
-  ): Promise<User | null> {
+  ): Promise<UserSchemaClass | null> {
     return this.usersService.update(id, updateProfileDto);
   }
 
@@ -133,7 +133,7 @@ export class UsersController {
     required: true,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: User['id']): Promise<void> {
+  remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
   }
 }

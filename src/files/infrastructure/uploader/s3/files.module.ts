@@ -1,33 +1,21 @@
-import {
-  HttpStatus,
-  Module,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { FilesS3Controller } from './files.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { S3Client } from '@aws-sdk/client-s3';
-import multerS3 from 'multer-s3';
-
 import { FilesS3Service } from './files.service';
-
-import { DocumentFilePersistenceModule } from '../../persistence/document/document-persistence.module';
-import { RelationalFilePersistenceModule } from '../../persistence/relational/relational-persistence.module';
 import { AllConfigType } from '../../../../config/config.type';
-import { DatabaseConfig } from '../../../../database/config/database-config.type';
-import databaseConfig from '../../../../database/config/database.config';
-
-// <database-block>
-const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
-  .isDocumentDatabase
-  ? DocumentFilePersistenceModule
-  : RelationalFilePersistenceModule;
-// </database-block>
+import { FilesRepositoryService } from '../../../files-repository.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { FileSchemaClass, FileSchema } from '../../../schemas/file.schema';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 @Module({
   imports: [
-    infrastructurePersistenceModule,
+    MongooseModule.forFeature([
+      { name: FileSchemaClass.name, schema: FileSchema },
+    ]),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -45,26 +33,12 @@ const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
         });
 
         return {
-          fileFilter: (request, file, callback) => {
-            if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
-              return callback(
-                new UnprocessableEntityException({
-                  status: HttpStatus.UNPROCESSABLE_ENTITY,
-                  errors: {
-                    file: `cantUploadFileType`,
-                  },
-                }),
-                false,
-              );
-            }
-
-            callback(null, true);
-          },
           storage: multerS3({
             s3: s3,
             bucket: configService.getOrThrow('file.awsDefaultS3Bucket', {
               infer: true,
             }),
+            acl: 'public-read',
             contentType: multerS3.AUTO_CONTENT_TYPE,
             key: (request, file, callback) => {
               callback(
@@ -84,7 +58,7 @@ const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
     }),
   ],
   controllers: [FilesS3Controller],
-  providers: [FilesS3Service],
+  providers: [ConfigModule, ConfigService, FilesS3Service, FilesRepositoryService],
   exports: [FilesS3Service],
 })
 export class FilesS3Module {}

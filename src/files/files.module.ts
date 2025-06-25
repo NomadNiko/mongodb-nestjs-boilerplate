@@ -1,25 +1,13 @@
-import {
-  // common
-  Module,
-} from '@nestjs/common';
-
-import { DocumentFilePersistenceModule } from './infrastructure/persistence/document/document-persistence.module';
-import { RelationalFilePersistenceModule } from './infrastructure/persistence/relational/relational-persistence.module';
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { FilesService } from './files.service';
+import { FilesRepositoryService } from './files-repository.service';
+import { FileSchemaClass, FileSchema } from './schemas/file.schema';
 import fileConfig from './config/file.config';
 import { FileConfig, FileDriver } from './config/file-config.type';
 import { FilesLocalModule } from './infrastructure/uploader/local/files.module';
 import { FilesS3Module } from './infrastructure/uploader/s3/files.module';
 import { FilesS3PresignedModule } from './infrastructure/uploader/s3-presigned/files.module';
-import { DatabaseConfig } from '../database/config/database-config.type';
-import databaseConfig from '../database/config/database.config';
-
-// <database-block>
-const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
-  .isDocumentDatabase
-  ? DocumentFilePersistenceModule
-  : RelationalFilePersistenceModule;
-// </database-block>
 
 const infrastructureUploaderModule =
   (fileConfig() as FileConfig).driver === FileDriver.LOCAL
@@ -30,11 +18,12 @@ const infrastructureUploaderModule =
 
 @Module({
   imports: [
-    // import modules, etc.
-    infrastructurePersistenceModule,
+    MongooseModule.forFeature([
+      { name: FileSchemaClass.name, schema: FileSchema },
+    ]),
     infrastructureUploaderModule,
   ],
-  providers: [FilesService],
-  exports: [FilesService, infrastructurePersistenceModule],
+  providers: [FilesService, FilesRepositoryService],
+  exports: [FilesService, FilesRepositoryService, MongooseModule],
 })
 export class FilesModule {}

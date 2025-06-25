@@ -4,14 +4,13 @@ import {
   PayloadTooLargeException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { FileRepository } from '../../persistence/file.repository';
-
+import { FilesRepositoryService } from '../../../files-repository.service';
 import { FileUploadDto } from './dto/file.dto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';
-import { FileType } from '../../../domain/file';
+import { FileSchemaClass } from '../../../schemas/file.schema';
 import { AllConfigType } from '../../../../config/config.type';
 
 @Injectable()
@@ -19,7 +18,7 @@ export class FilesS3PresignedService {
   private s3: S3Client;
 
   constructor(
-    private readonly fileRepository: FileRepository,
+    private readonly filesRepositoryService: FilesRepositoryService,
     private readonly configService: ConfigService<AllConfigType>,
   ) {
     this.s3 = new S3Client({
@@ -37,7 +36,7 @@ export class FilesS3PresignedService {
 
   async create(
     file: FileUploadDto,
-  ): Promise<{ file: FileType; uploadSignedUrl: string }> {
+  ): Promise<{ file: FileSchemaClass; uploadSignedUrl: string }> {
     if (!file) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -82,7 +81,7 @@ export class FilesS3PresignedService {
       ContentLength: file.fileSize,
     });
     const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
-    const data = await this.fileRepository.create({
+    const data = await this.filesRepositoryService.create({
       path: key,
     });
 

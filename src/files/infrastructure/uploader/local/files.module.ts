@@ -8,25 +8,17 @@ import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { diskStorage } from 'multer';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-
 import { FilesLocalService } from './files.service';
-
-import { DocumentFilePersistenceModule } from '../../persistence/document/document-persistence.module';
-import { RelationalFilePersistenceModule } from '../../persistence/relational/relational-persistence.module';
 import { AllConfigType } from '../../../../config/config.type';
-import { DatabaseConfig } from '../../../../database/config/database-config.type';
-import databaseConfig from '../../../../database/config/database.config';
-
-// <database-block>
-const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
-  .isDocumentDatabase
-  ? DocumentFilePersistenceModule
-  : RelationalFilePersistenceModule;
-// </database-block>
+import { FilesRepositoryService } from '../../../files-repository.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { FileSchemaClass, FileSchema } from '../../../schemas/file.schema';
 
 @Module({
   imports: [
-    infrastructurePersistenceModule,
+    MongooseModule.forFeature([
+      { name: FileSchemaClass.name, schema: FileSchema },
+    ]),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -67,7 +59,7 @@ const infrastructurePersistenceModule = (databaseConfig() as DatabaseConfig)
     }),
   ],
   controllers: [FilesLocalController],
-  providers: [ConfigModule, ConfigService, FilesLocalService],
+  providers: [ConfigModule, ConfigService, FilesLocalService, FilesRepositoryService],
   exports: [FilesLocalService],
 })
 export class FilesLocalModule {}
