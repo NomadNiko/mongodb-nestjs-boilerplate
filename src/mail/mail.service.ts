@@ -166,4 +166,52 @@ export class MailService {
       },
     });
   }
+
+  async userInvite(mailData: MailData<{ hash: string; firstName: string }>): Promise<void> {
+    const i18n = I18nContext.current();
+    let inviteTitle: MaybeType<string>;
+    let text1: MaybeType<string>;
+    let text2: MaybeType<string>;
+    let text3: MaybeType<string>;
+
+    if (i18n) {
+      [inviteTitle, text1, text2, text3] = await Promise.all([
+        i18n.t('common.inviteUser'),
+        i18n.t('invite-user.text1'),
+        i18n.t('invite-user.text2'),
+        i18n.t('invite-user.text3'),
+      ]);
+    }
+
+    const url = new URL(
+      this.configService.getOrThrow('app.frontendDomain', {
+        infer: true,
+      }) + '/accept-invite',
+    );
+    url.searchParams.set('hash', mailData.data.hash);
+
+    await this.mailerService.sendMail({
+      to: mailData.to,
+      subject: inviteTitle || `You've been invited to ${this.configService.get('app.name', { infer: true })}`,
+      text: `${url.toString()} ${inviteTitle}`,
+      templatePath: path.join(
+        this.configService.getOrThrow('app.workingDirectory', {
+          infer: true,
+        }),
+        'src',
+        'mail',
+        'mail-templates',
+        'activation.hbs',
+      ),
+      context: {
+        title: inviteTitle || `You've been invited to ${this.configService.get('app.name', { infer: true })}`,
+        url: url.toString(),
+        actionTitle: 'Complete Sign-up',
+        app_name: this.configService.get('app.name', { infer: true }),
+        text1: text1 || `Hey ${mailData.data.firstName}!`,
+        text2: text2 || `You've been invited to join ${this.configService.get('app.name', { infer: true })}.`,
+        text3: text3 || 'Simply click the big green button below to complete your sign-up.',
+      },
+    });
+  }
 }

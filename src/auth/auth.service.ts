@@ -27,6 +27,8 @@ import { RoleEnum } from '../roles/roles.enum';
 import { SessionSchemaClass } from '../session/schemas/session.schema';
 import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
+import { AuthInviteUserDto } from './dto/auth-invite-user.dto';
+import { AuthAcceptInviteDto } from './dto/auth-accept-invite.dto';
 import { UserSchemaClass } from '../users/schemas/user.schema';
 
 @Injectable()
@@ -228,7 +230,7 @@ export class AuthService {
     });
   }
 
-  async confirmEmail(hash: string): Promise<void> {
+  async confirmEmail(hash: string): Promise<LoginResponseDto> {
     let userId: string;
 
     try {
@@ -267,6 +269,35 @@ export class AuthService {
     };
 
     await this.usersService.update(user._id, user);
+
+    // Auto-login the user
+    const sessionHash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    const session = await this.sessionService.create({
+      user,
+      hash: sessionHash,
+    });
+
+    const {
+      token: jwtToken,
+      refreshToken,
+      tokenExpires,
+    } = await this.getTokensData({
+      id: user._id,
+      role: user.role,
+      sessionId: session._id,
+      hash: sessionHash,
+    });
+
+    return {
+      refreshToken,
+      token: jwtToken,
+      tokenExpires,
+      user,
+    };
   }
 
   async confirmNewEmail(hash: string): Promise<void> {
@@ -350,7 +381,7 @@ export class AuthService {
     });
   }
 
-  async resetPassword(hash: string, password: string): Promise<void> {
+  async resetPassword(hash: string, password: string): Promise<LoginResponseDto> {
     let userId: string;
 
     try {
@@ -390,6 +421,35 @@ export class AuthService {
     });
 
     await this.usersService.update(user._id, user);
+
+    // Auto-login the user
+    const sessionHash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    const session = await this.sessionService.create({
+      user,
+      hash: sessionHash,
+    });
+
+    const {
+      token: jwtToken,
+      refreshToken,
+      tokenExpires,
+    } = await this.getTokensData({
+      id: user._id,
+      role: user.role,
+      sessionId: session._id,
+      hash: sessionHash,
+    });
+
+    return {
+      refreshToken,
+      token: jwtToken,
+      tokenExpires,
+      user,
+    };
   }
 
   async me(userJwtPayload: JwtPayloadType): Promise<NullableType<UserSchemaClass>> {
@@ -589,6 +649,131 @@ export class AuthService {
       token,
       refreshToken,
       tokenExpires,
+    };
+  }
+
+  async inviteUser(dto: AuthInviteUserDto): Promise<void> {
+    // Check if user already exists
+    const existingUser = await this.usersService.findByEmail(dto.email);
+    if (existingUser) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          email: 'emailAlreadyExists',
+        },
+      });
+    }
+
+    // Create user with invited status
+    const user = await this.usersService.create({
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      role: {
+        id: RoleEnum.user,
+      },
+      status: {
+        _id: StatusEnum.inactive.toString(),
+      },
+    });
+
+    // Generate invite hash
+    const hash = await this.jwtService.signAsync(
+      {
+        inviteUserId: user._id,
+      },
+      {
+        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
+          infer: true,
+        }),
+      },
+    );
+
+    // Send invite email
+    await this.mailService.userInvite({
+      to: dto.email,
+      data: {
+        hash,
+        firstName: dto.firstName,
+      },
+    });
+  }
+
+  async acceptInvite(dto: AuthAcceptInviteDto): Promise<LoginResponseDto> {
+    let userId: string;
+
+    try {
+      const jwtData = await this.jwtService.verifyAsync<{
+        inviteUserId: string;
+      }>(dto.hash, {
+        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+          infer: true,
+        }),
+      });
+
+      userId = jwtData.inviteUserId;
+    } catch {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          hash: 'invalidHash',
+        },
+      });
+    }
+
+    const user = await this.usersService.findById(userId);
+
+    if (
+      !user ||
+      user?.status?._id?.toString() !== StatusEnum.inactive.toString()
+    ) {
+      throw new NotFoundException({
+        status: HttpStatus.NOT_FOUND,
+        error: 'notFound',
+      });
+    }
+
+    // Set password and activate user
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(dto.password, salt);
+
+    user.password = hashedPassword;
+    user.status = {
+      _id: StatusEnum.active.toString(),
+    };
+
+    await this.usersService.update(user._id, user);
+
+    // Auto-login the user
+    const hash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    const session = await this.sessionService.create({
+      user,
+      hash,
+    });
+
+    const {
+      token: jwtToken,
+      refreshToken,
+      tokenExpires,
+    } = await this.getTokensData({
+      id: user._id,
+      role: user.role,
+      sessionId: session._id,
+      hash,
+    });
+
+    return {
+      refreshToken,
+      token: jwtToken,
+      tokenExpires,
+      user,
     };
   }
 }

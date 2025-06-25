@@ -24,6 +24,8 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { NullableType } from '../utils/types/nullable.type';
 import { UserSchemaClass } from '../users/schemas/user.schema';
 import { RefreshResponseDto } from './dto/refresh-response.dto';
+import { AuthInviteUserDto } from './dto/auth-invite-user.dto';
+import { AuthAcceptInviteDto } from './dto/auth-accept-invite.dto';
 
 @ApiTags('Auth')
 @Controller({
@@ -52,10 +54,13 @@ export class AuthController {
   }
 
   @Post('email/confirm')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOkResponse({
+    type: LoginResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async confirmEmail(
     @Body() confirmEmailDto: AuthConfirmEmailDto,
-  ): Promise<void> {
+  ): Promise<LoginResponseDto> {
     return this.service.confirmEmail(confirmEmailDto.hash);
   }
 
@@ -76,8 +81,11 @@ export class AuthController {
   }
 
   @Post('reset/password')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  resetPassword(@Body() resetPasswordDto: AuthResetPasswordDto): Promise<void> {
+  @ApiOkResponse({
+    type: LoginResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() resetPasswordDto: AuthResetPasswordDto): Promise<LoginResponseDto> {
     return this.service.resetPassword(
       resetPasswordDto.hash,
       resetPasswordDto.password,
@@ -148,5 +156,22 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(@Request() request): Promise<void> {
     return this.service.softDelete(request.user);
+  }
+
+  @ApiBearerAuth()
+  @Post('invite')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async inviteUser(@Body() inviteUserDto: AuthInviteUserDto): Promise<void> {
+    return this.service.inviteUser(inviteUserDto);
+  }
+
+  @Post('accept-invite')
+  @ApiOkResponse({
+    type: LoginResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  public acceptInvite(@Body() acceptInviteDto: AuthAcceptInviteDto): Promise<LoginResponseDto> {
+    return this.service.acceptInvite(acceptInviteDto);
   }
 }
