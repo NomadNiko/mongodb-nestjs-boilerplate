@@ -77,12 +77,22 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<NullableType<UserSchemaClass>> {
-    return await this.usersModel.findById(id);
+    const user = await this.usersModel.findById(id).lean();
+    if (user) {
+      // Convert ObjectId to string
+      user._id = user._id.toString();
+    }
+    return user;
   }
 
   async findByEmail(email: string): Promise<NullableType<UserSchemaClass>> {
     if (!email) return null;
-    return await this.usersModel.findOne({ email });
+    const user = await this.usersModel.findOne({ email }).lean();
+    if (user) {
+      // Convert ObjectId to string
+      user._id = user._id.toString();
+    }
+    return user;
   }
 
   async findBySocialIdAndProvider({
@@ -93,7 +103,12 @@ export class UsersService {
     provider: string;
   }): Promise<NullableType<UserSchemaClass>> {
     if (!socialId || !provider) return null;
-    return await this.usersModel.findOne({ socialId, provider });
+    const user = await this.usersModel.findOne({ socialId, provider }).lean();
+    if (user) {
+      // Convert ObjectId to string
+      user._id = user._id.toString();
+    }
+    return user;
   }
 
   async update(
@@ -115,9 +130,14 @@ export class UsersService {
       clonedPayload.photo = null;
     }
 
-    return await this.usersModel.findByIdAndUpdate(id, clonedPayload, {
+    const user = await this.usersModel.findByIdAndUpdate(id, clonedPayload, {
       new: true,
-    });
+    }).lean();
+    if (user) {
+      // Convert ObjectId to string
+      user._id = user._id.toString();
+    }
+    return user;
   }
 
   async remove(id: string): Promise<void> {

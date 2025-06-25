@@ -39,3 +39,4 @@ lerna-debug.log*
 .env
 /ormconfig.json
 .codegpt
+ANALYSIS_USER_STATUS_ISSUE.md
