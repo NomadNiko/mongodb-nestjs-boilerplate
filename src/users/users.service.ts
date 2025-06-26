@@ -143,4 +143,16 @@ export class UsersService {
   async remove(id: string): Promise<void> {
     await this.usersModel.deleteOne({ _id: id });
   }
+
+  async findAllEmployees(): Promise<UserSchemaClass[]> {
+    const users = await this.usersModel
+      .find({ 'status._id': '1' }) // Active status has _id: '1'
+      .select('_id email firstName lastName role')
+      .lean();
+    
+    return users.map(user => ({
+      ...user,
+      _id: user._id.toString(),
+    }));
+  }
 }

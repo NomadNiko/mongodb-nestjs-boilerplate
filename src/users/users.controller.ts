@@ -60,6 +60,18 @@ export class UsersController {
   }
 
   @ApiOkResponse({
+    type: [UserSchemaClass],
+  })
+  @SerializeOptions({
+    groups: ['admin'],
+  })
+  @Get('employees/all')
+  @HttpCode(HttpStatus.OK)
+  async findAllEmployees(): Promise<UserSchemaClass[]> {
+    return this.usersService.findAllEmployees();
+  }
+
+  @ApiOkResponse({
     type: InfinityPaginationResponse(UserSchemaClass),
   })
   @SerializeOptions({
@@ -137,3 +149,4 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 }
+

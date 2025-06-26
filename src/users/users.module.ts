@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersController } from './users.controller';
+import { EmployeesController } from './employees.controller';
 import { UsersService } from './users.service';
 import { UserSchemaClass, UserSchema } from './schemas/user.schema';
 import { FilesModule } from '../files/files.module';
@@ -12,7 +13,7 @@ import { FilesModule } from '../files/files.module';
     ]),
     FilesModule,
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, EmployeesController],
   providers: [UsersService],
   exports: [UsersService, MongooseModule],
 })

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { UsersModule } from './users/users.module';
 import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,6 +23,11 @@ import { SessionModule } from './session/session.module';
 import { MailerModule } from './mailer/mailer.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongooseConfigService } from './database/mongoose-config.service';
+import { ShiftTypesModule } from './shift-types/shift-types.module';
+import { SchedulesModule } from './schedules/schedules.module';
+import { ScheduleShiftsModule } from './schedule-shifts/schedule-shifts.module';
+import { SchedulesService } from './schedules/schedules.service';
+import { ScheduleShiftsService } from './schedule-shifts/schedule-shifts.service';
 
 @Module({
   imports: [
@@ -76,6 +81,19 @@ import { MongooseConfigService } from './database/mongoose-config.service';
     MailModule,
     MailerModule,
     HomeModule,
+    ShiftTypesModule,
+    SchedulesModule,
+    ScheduleShiftsModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(
+    private readonly schedulesService: SchedulesService,
+    private readonly scheduleShiftsService: ScheduleShiftsService,
+  ) {}
+
+  onModuleInit() {
+    // Set up circular dependency between schedules and schedule-shifts services
+    this.schedulesService.setScheduleShiftsService(this.scheduleShiftsService);
+  }
+}
