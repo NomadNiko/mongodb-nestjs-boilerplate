@@ -4,7 +4,7 @@ import { NullableType } from '../utils/types/nullable.type';
 import { FilterUserDto, SortUserDto } from './dto/query-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { UserSchemaClass } from './schemas/user.schema';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import bcrypt from 'bcryptjs';
@@ -38,6 +38,19 @@ export class UsersService {
       clonedPayload.role = {
         id: '1',
       };
+    }
+
+    // Handle photo ObjectId conversion
+    if (clonedPayload.photo) {
+      if (typeof clonedPayload.photo === 'object' && 'id' in clonedPayload.photo) {
+        if (clonedPayload.photo.id === null) {
+          (clonedPayload as any).photo = null;
+        } else if (Types.ObjectId.isValid(clonedPayload.photo.id)) {
+          (clonedPayload as any).photo = new Types.ObjectId(clonedPayload.photo.id);
+        }
+      } else if (typeof clonedPayload.photo === 'string' && Types.ObjectId.isValid(clonedPayload.photo)) {
+        (clonedPayload as any).photo = new Types.ObjectId(clonedPayload.photo);
+      }
     }
 
     const createdUser = new this.usersModel(clonedPayload);
@@ -139,8 +152,17 @@ export class UsersService {
       clonedPayload.email = clonedPayload.email.toLowerCase();
     }
 
-    if (clonedPayload.photo && 'id' in clonedPayload.photo && clonedPayload.photo?.id === null) {
-      clonedPayload.photo = null;
+    // Handle photo ObjectId conversion
+    if (clonedPayload.photo) {
+      if (typeof clonedPayload.photo === 'object' && 'id' in clonedPayload.photo) {
+        if (clonedPayload.photo.id === null) {
+          (clonedPayload as any).photo = null;
+        } else if (Types.ObjectId.isValid(clonedPayload.photo.id)) {
+          (clonedPayload as any).photo = new Types.ObjectId(clonedPayload.photo.id);
+        }
+      } else if (typeof clonedPayload.photo === 'string' && Types.ObjectId.isValid(clonedPayload.photo)) {
+        (clonedPayload as any).photo = new Types.ObjectId(clonedPayload.photo);
+      }
     }
 
     const user = await this.usersModel.findByIdAndUpdate(id, clonedPayload, {
