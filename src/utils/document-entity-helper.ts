@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { Types } from 'mongoose';
 
 export class EntityDocumentHelper {
   @Transform(
@@ -14,7 +15,7 @@ export class EntityDocumentHelper {
         }
         if (objectId && typeof objectId === 'object' && objectId.buffer) {
           // Handle ObjectId buffer objects
-          return new (require('mongoose').Types.ObjectId)(objectId).toString();
+          return new Types.ObjectId(objectId).toString();
         }
       }
 
