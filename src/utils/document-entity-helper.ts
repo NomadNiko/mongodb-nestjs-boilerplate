@@ -5,7 +5,17 @@ export class EntityDocumentHelper {
     (value) => {
       if ('value' in value) {
         // https://github.com/typestack/class-transformer/issues/879
-        return value.obj[value.key].toString();
+        const objectId = value.obj[value.key];
+        if (objectId && typeof objectId === 'object' && objectId.toString) {
+          return objectId.toString();
+        }
+        if (typeof objectId === 'string') {
+          return objectId;
+        }
+        if (objectId && typeof objectId === 'object' && objectId.buffer) {
+          // Handle ObjectId buffer objects
+          return new (require('mongoose').Types.ObjectId)(objectId).toString();
+        }
       }
 
       return 'unknown value';

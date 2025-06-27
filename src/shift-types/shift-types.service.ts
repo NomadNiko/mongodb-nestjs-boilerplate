@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ShiftTypeSchemaClass, ShiftTypeSchemaDocument } from './schemas/shift-type.schema';
 import { ScheduleShiftSchemaClass, ScheduleShiftSchemaDocument } from '../schedule-shifts/schemas/schedule-shift.schema';
 import { CreateShiftTypeDto } from './dto/create-shift-type.dto';
@@ -130,8 +130,10 @@ export class ShiftTypesService {
   }
 
   async findByIds(ids: string[]): Promise<ShiftTypeSchemaDocument[]> {
+    const validIds = ids.filter(id => Types.ObjectId.isValid(id));
+    const objectIds = validIds.map(id => new Types.ObjectId(id));
     return this.shiftTypeModel
-      .find({ _id: { $in: ids }, isActive: true })
+      .find({ _id: { $in: objectIds }, isActive: true })
       .exec();
   }
 }

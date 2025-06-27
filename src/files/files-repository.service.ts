@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { FileSchemaClass } from './schemas/file.schema';
 import { NullableType } from '../utils/types/nullable.type';
 
@@ -17,10 +17,15 @@ export class FilesRepositoryService {
   }
 
   async findById(id: string): Promise<NullableType<FileSchemaClass>> {
-    return await this.fileModel.findById(id);
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return await this.fileModel.findById(new Types.ObjectId(id));
   }
 
   async findByIds(ids: string[]): Promise<FileSchemaClass[]> {
-    return await this.fileModel.find({ _id: { $in: ids } });
+    const validIds = ids.filter(id => Types.ObjectId.isValid(id));
+    const objectIds = validIds.map(id => new Types.ObjectId(id));
+    return await this.fileModel.find({ _id: { $in: objectIds } });
   }
 }
