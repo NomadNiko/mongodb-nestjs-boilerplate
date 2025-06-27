@@ -15,12 +15,17 @@ export class UserShiftsService {
   ) {}
 
   async getUserShifts(userId: string): Promise<ScheduleShiftDto[]> {
+    console.log('🔍 [UserShiftsService] Getting shifts for user:', userId);
+    
     // Get all published schedules
     const publishedSchedules = await this.scheduleModel
       .find({ status: 'published' })
       .exec();
 
+    console.log('📅 [UserShiftsService] Published schedules found:', publishedSchedules.length);
+    
     const scheduleIds = publishedSchedules.map(schedule => schedule._id.toString());
+    console.log('📋 [UserShiftsService] Schedule IDs:', scheduleIds);
 
     // Get all shifts for the user across all published schedules
     const userShifts = await this.scheduleShiftModel
@@ -32,6 +37,14 @@ export class UserShiftsService {
       .populate('userId', 'firstName lastName role')
       .sort({ date: -1 }) // Sort by date descending (newest first)
       .exec();
+
+    console.log('🎯 [UserShiftsService] User shifts found:', userShifts.length);
+    console.log('👤 [UserShiftsService] User shifts details:', userShifts.map(s => ({
+      id: s._id.toString(),
+      userId: s.userId,
+      shiftType: s.shiftTypeId?.name,
+      date: s.date
+    })));
 
     return userShifts.map(this.transformShift);
   }
