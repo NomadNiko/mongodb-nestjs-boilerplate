@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { now, HydratedDocument, Types } from 'mongoose';
+import { now, HydratedDocument } from 'mongoose';
 
 import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 import { FileSchemaClass } from '../../files/schemas/file.schema';
@@ -48,10 +48,9 @@ export class UserSchemaClass extends EntityDocumentHelper {
   lastName: string | null;
 
   @Prop({
-    type: Types.ObjectId,
-    ref: FileSchemaClass.name,
+    type: FileSchemaClass,
   })
-  photo?: Types.ObjectId | null;
+  photo?: FileSchemaClass | null;
 
   @Prop({
     type: RoleSchema,
@@ -76,8 +75,3 @@ export class UserSchemaClass extends EntityDocumentHelper {
 export const UserSchema = SchemaFactory.createForClass(UserSchemaClass);
 
 UserSchema.index({ 'role._id': 1 });
-
-// Auto-populate photo field
-UserSchema.pre(['find', 'findOne', 'findOneAndUpdate'], function() {
-  this.populate('photo');
-});
