@@ -14,7 +14,12 @@ export class FilesRepositoryService {
 
   async create(data: Omit<FileSchemaClass, '_id'>): Promise<FileSchemaClass> {
     const createdFile = new this.fileModel(data);
-    return await createdFile.save();
+    const savedFile = await createdFile.save();
+    
+    // Convert to plain object with string _id to avoid ObjectId buffer issues
+    const plainFile = savedFile.toJSON();
+    plainFile._id = savedFile._id.toString();
+    return plainFile;
   }
 
   async findById(id: string | Types.ObjectId | any): Promise<NullableType<FileSchemaClass>> {
@@ -22,11 +27,25 @@ export class FilesRepositoryService {
     if (!objectId) {
       return null;
     }
-    return await this.fileModel.findById(objectId);
+    const file = await this.fileModel.findById(objectId);
+    if (file) {
+      // Convert to plain object with string _id
+      const plainFile = file.toJSON();
+      plainFile._id = file._id.toString();
+      return plainFile;
+    }
+    return null;
   }
 
   async findByIds(ids: (string | Types.ObjectId | any)[]): Promise<FileSchemaClass[]> {
     const query = safeObjectIdQuery(ids);
-    return await this.fileModel.find({ _id: query });
+    const files = await this.fileModel.find({ _id: query });
+    
+    // Convert all files to plain objects with string _id
+    return files.map(file => {
+      const plainFile = file.toJSON();
+      plainFile._id = file._id.toString();
+      return plainFile;
+    });
   }
 }
