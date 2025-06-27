@@ -129,9 +129,27 @@ export class ShiftTypesService {
     }
   }
 
-  async findByIds(ids: string[]): Promise<ShiftTypeSchemaDocument[]> {
-    const validIds = ids.filter(id => Types.ObjectId.isValid(id));
-    const objectIds = validIds.map(id => new Types.ObjectId(id));
+  async findByIds(ids: (string | Types.ObjectId | any)[]): Promise<ShiftTypeSchemaDocument[]> {
+    const objectIds: Types.ObjectId[] = [];
+    
+    for (const id of ids) {
+      try {
+        if (typeof id === 'string') {
+          if (Types.ObjectId.isValid(id)) {
+            objectIds.push(new Types.ObjectId(id));
+          }
+        } else if (id && typeof id === 'object' && id.buffer) {
+          // Handle ObjectId buffer objects
+          objectIds.push(new Types.ObjectId(id));
+        } else if (id instanceof Types.ObjectId) {
+          objectIds.push(id);
+        }
+      } catch (error) {
+        // Skip invalid IDs
+        continue;
+      }
+    }
+    
     return this.shiftTypeModel
       .find({ _id: { $in: objectIds }, isActive: true })
       .exec();

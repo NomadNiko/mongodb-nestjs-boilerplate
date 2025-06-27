@@ -16,16 +16,51 @@ export class FilesRepositoryService {
     return await createdFile.save();
   }
 
-  async findById(id: string): Promise<NullableType<FileSchemaClass>> {
-    if (!Types.ObjectId.isValid(id)) {
+  async findById(id: string | Types.ObjectId | any): Promise<NullableType<FileSchemaClass>> {
+    let objectId: Types.ObjectId;
+    
+    try {
+      if (typeof id === 'string') {
+        if (!Types.ObjectId.isValid(id)) {
+          return null;
+        }
+        objectId = new Types.ObjectId(id);
+      } else if (id && typeof id === 'object' && id.buffer) {
+        // Handle ObjectId buffer objects
+        objectId = new Types.ObjectId(id);
+      } else if (id instanceof Types.ObjectId) {
+        objectId = id;
+      } else {
+        return null;
+      }
+    } catch (error) {
       return null;
     }
-    return await this.fileModel.findById(new Types.ObjectId(id));
+    
+    return await this.fileModel.findById(objectId);
   }
 
-  async findByIds(ids: string[]): Promise<FileSchemaClass[]> {
-    const validIds = ids.filter(id => Types.ObjectId.isValid(id));
-    const objectIds = validIds.map(id => new Types.ObjectId(id));
+  async findByIds(ids: (string | Types.ObjectId | any)[]): Promise<FileSchemaClass[]> {
+    const objectIds: Types.ObjectId[] = [];
+    
+    for (const id of ids) {
+      try {
+        if (typeof id === 'string') {
+          if (Types.ObjectId.isValid(id)) {
+            objectIds.push(new Types.ObjectId(id));
+          }
+        } else if (id && typeof id === 'object' && id.buffer) {
+          // Handle ObjectId buffer objects
+          objectIds.push(new Types.ObjectId(id));
+        } else if (id instanceof Types.ObjectId) {
+          objectIds.push(id);
+        }
+      } catch (error) {
+        // Skip invalid IDs
+        continue;
+      }
+    }
+    
     return await this.fileModel.find({ _id: { $in: objectIds } });
   }
 }
