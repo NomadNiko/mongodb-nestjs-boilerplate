@@ -38,7 +38,6 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
             bucket: configService.getOrThrow('file.awsDefaultS3Bucket', {
               infer: true,
             }),
-            acl: 'public-read',
             contentType: multerS3.AUTO_CONTENT_TYPE,
             key: (request, file, callback) => {
               callback(
@@ -58,7 +57,12 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
     }),
   ],
   controllers: [FilesS3Controller],
-  providers: [ConfigModule, ConfigService, FilesS3Service, FilesRepositoryService],
+  providers: [
+    ConfigModule,
+    ConfigService,
+    FilesS3Service,
+    FilesRepositoryService,
+  ],
   exports: [FilesS3Service],
 })
 export class FilesS3Module {}
