@@ -26,6 +26,7 @@ import { MongooseConfigService } from './database/mongoose-config.service';
 import { ShiftTypesModule } from './shift-types/shift-types.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { ScheduleShiftsModule } from './schedule-shifts/schedule-shifts.module';
+import { UserShiftsModule } from './user-shifts/user-shifts.module';
 import { SchedulesService } from './schedules/schedules.service';
 import { ScheduleShiftsService } from './schedule-shifts/schedule-shifts.service';
 
@@ -84,6 +85,7 @@ import { ScheduleShiftsService } from './schedule-shifts/schedule-shifts.service
     ShiftTypesModule,
     SchedulesModule,
     ScheduleShiftsModule,
+    UserShiftsModule,
   ],
 })
 export class AppModule implements OnModuleInit {
