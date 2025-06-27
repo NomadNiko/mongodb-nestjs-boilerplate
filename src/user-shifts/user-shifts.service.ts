@@ -42,7 +42,7 @@ export class UserShiftsService {
     console.log('👤 [UserShiftsService] User shifts details:', userShifts.map(s => ({
       id: s._id.toString(),
       userId: s.userId,
-      shiftType: s.shiftTypeId?.name,
+      shiftType: (s.shiftTypeId as any)?.name || 'Unknown',
       date: s.date
     })));
 
