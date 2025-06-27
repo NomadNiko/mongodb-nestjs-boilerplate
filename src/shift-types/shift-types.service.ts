@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { safeObjectIdQuery } from '../utils/objectid-helpers';
 import { ShiftTypeSchemaClass, ShiftTypeSchemaDocument } from './schemas/shift-type.schema';
 import { ScheduleShiftSchemaClass, ScheduleShiftSchemaDocument } from '../schedule-shifts/schemas/schedule-shift.schema';
 import { CreateShiftTypeDto } from './dto/create-shift-type.dto';
@@ -130,28 +131,9 @@ export class ShiftTypesService {
   }
 
   async findByIds(ids: (string | Types.ObjectId | any)[]): Promise<ShiftTypeSchemaDocument[]> {
-    const objectIds: Types.ObjectId[] = [];
-    
-    for (const id of ids) {
-      try {
-        if (typeof id === 'string') {
-          if (Types.ObjectId.isValid(id)) {
-            objectIds.push(new Types.ObjectId(id));
-          }
-        } else if (id && typeof id === 'object' && id.buffer) {
-          // Handle ObjectId buffer objects
-          objectIds.push(new Types.ObjectId(id));
-        } else if (id instanceof Types.ObjectId) {
-          objectIds.push(id);
-        }
-      } catch (error) {
-        // Skip invalid IDs
-        continue;
-      }
-    }
-    
+    const query = safeObjectIdQuery(ids);
     return this.shiftTypeModel
-      .find({ _id: { $in: objectIds }, isActive: true })
+      .find({ _id: query, isActive: true })
       .exec();
   }
 }

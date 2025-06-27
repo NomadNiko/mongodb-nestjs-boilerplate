@@ -16,18 +16,3 @@ export class FileSchemaClass extends EntityDocumentHelper {
 }
 
 export const FileSchema = SchemaFactory.createForClass(FileSchemaClass);
-
-// Add custom ObjectId casting to handle buffer objects
-FileSchema.path('_id').cast(function(value) {
-  if (value && typeof value === 'object' && value.buffer) {
-    // Handle ObjectId buffer objects
-    return new Types.ObjectId(value);
-  }
-  if (typeof value === 'string' && Types.ObjectId.isValid(value)) {
-    return new Types.ObjectId(value);
-  }
-  if (value instanceof Types.ObjectId) {
-    return value;
-  }
-  return value;
-});
