@@ -196,56 +196,120 @@ export class ScheduleShiftsService {
   }
 
   async copyPrevious(scheduleId: string): Promise<CopyPreviousResponseDto> {
+    console.log('🔄 Starting Copy Previous Week for schedule:', scheduleId);
+    
     const currentSchedule = await this.scheduleModel.findById(scheduleId);
     if (!currentSchedule) {
       throw new NotFoundException('Schedule not found');
     }
 
-    // Find most recent published schedule
-    const lastSchedule = await this.scheduleModel
+    console.log('📅 Current schedule:', {
+      name: currentSchedule.name,
+      startDate: currentSchedule.startDate,
+      endDate: currentSchedule.endDate,
+      status: currentSchedule.status
+    });
+
+    // Find the most recent published schedule (newest by endDate)
+    const mostRecentPublishedSchedule = await this.scheduleModel
       .findOne({ 
         status: 'published',
-        endDate: { $lt: currentSchedule.startDate }
+        _id: { $ne: scheduleId } // Exclude current schedule
       })
-      .sort({ endDate: -1 })
+      .sort({ endDate: -1 }) // Sort by endDate descending (most recent first)
       .exec();
 
-    if (!lastSchedule) {
-      throw new NotFoundException('No previous published schedule found');
+    if (!mostRecentPublishedSchedule) {
+      console.log('❌ No published schedule found to copy from');
+      throw new NotFoundException('No published schedule found to copy from');
     }
 
-    // Get shifts from last schedule
-    const lastShifts = await this.scheduleShiftModel
-      .find({ scheduleId: lastSchedule._id })
+    console.log('📋 Most recent published schedule to copy from:', {
+      name: mostRecentPublishedSchedule.name,
+      startDate: mostRecentPublishedSchedule.startDate,
+      endDate: mostRecentPublishedSchedule.endDate
+    });
+
+    // Get shifts from the most recent published schedule
+    // Use string-based query since scheduleId is stored as string in database
+    const sourceShifts = await this.scheduleShiftModel
+      .find({ scheduleId: mostRecentPublishedSchedule._id.toString() })
+      .populate('shiftTypeId')
       .exec();
 
-    if (lastShifts.length === 0) {
+    console.log('📊 Found shifts in source schedule:', sourceShifts.length);
+
+    if (sourceShifts.length === 0) {
       return {
-        message: 'No shifts found in previous schedule',
+        message: 'No shifts found in the most recent published schedule',
         count: 0,
+        shiftsToCreate: [],
+        sourceScheduleName: mostRecentPublishedSchedule.name,
       };
     }
 
-    // Calculate date offset
-    const daysDiff = Math.ceil(
-      (currentSchedule.startDate.getTime() - lastSchedule.startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // Group shifts by day of week and shift type
+    const shiftPatternsByDay: { [dayOfWeek: number]: { [shiftTypeId: string]: number } } = {};
+    
+    sourceShifts.forEach(shift => {
+      const dayOfWeek = shift.date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Extract the actual shiftTypeId from the populated object or use the raw ID
+      const shiftTypeId = shift.shiftTypeId._id ? shift.shiftTypeId._id.toString() : shift.shiftTypeId.toString();
+      
+      if (!shiftPatternsByDay[dayOfWeek]) {
+        shiftPatternsByDay[dayOfWeek] = {};
+      }
+      
+      if (!shiftPatternsByDay[dayOfWeek][shiftTypeId]) {
+        shiftPatternsByDay[dayOfWeek][shiftTypeId] = 0;
+      }
+      
+      shiftPatternsByDay[dayOfWeek][shiftTypeId]++;
+    });
 
-    // Create new shifts
-    const newShifts = lastShifts.map(shift => ({
-      scheduleId: currentSchedule._id,
-      shiftTypeId: shift.shiftTypeId,
-      date: new Date(shift.date.getTime() + daysDiff * 24 * 60 * 60 * 1000),
-      order: shift.order,
-      isActive: false,
-      userId: null, // Clear user assignments
-    }));
+    console.log('📈 Analyzed shift patterns by day:', shiftPatternsByDay);
 
-    await this.scheduleShiftModel.insertMany(newShifts);
+    // Generate dates for current schedule week (Monday to Sunday)
+    const currentStartDate = new Date(currentSchedule.startDate);
+    const weekDates: Date[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(currentStartDate);
+      date.setDate(currentStartDate.getDate() + i);
+      weekDates.push(date);
+    }
+
+    console.log('📅 Target week dates:', weekDates.map(d => d.toISOString().split('T')[0]));
+
+    // Create shift pattern data to return (NOT save to database)
+    const shiftsToCreate: Array<{shiftTypeId: string, date: string, order: number}> = [];
+    
+    weekDates.forEach(date => {
+      const dayOfWeek = date.getDay();
+      const patterns = shiftPatternsByDay[dayOfWeek];
+      
+      if (patterns) {
+        Object.entries(patterns).forEach(([shiftTypeId, count]) => {
+          // Create 'count' number of shift patterns for this shift type on this day
+          for (let i = 0; i < count; i++) {
+            shiftsToCreate.push({
+              shiftTypeId: shiftTypeId,
+              date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+              order: i + 1, // Order starts from 1
+            });
+          }
+        });
+      }
+    });
+
+    console.log('✨ Generated shift patterns to create:', shiftsToCreate.length);
+    console.log('📝 Shift patterns breakdown:', shiftsToCreate);
 
     return {
-      message: 'Shifts copied successfully',
-      count: newShifts.length,
+      message: `Found ${shiftsToCreate.length} shifts to copy from "${mostRecentPublishedSchedule.name}" based on shift patterns`,
+      count: shiftsToCreate.length,
+      shiftsToCreate: shiftsToCreate,
+      sourceScheduleName: mostRecentPublishedSchedule.name,
     };
   }
 

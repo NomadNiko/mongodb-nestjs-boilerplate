@@ -41,7 +41,12 @@ export class UsersService {
     }
 
     const createdUser = new this.usersModel(clonedPayload);
-    return await createdUser.save();
+    const savedUser = await createdUser.save();
+    
+    // Convert to clean JSON
+    const userJson = savedUser.toJSON();
+    userJson._id = userJson._id.toString();
+    return userJson;
   }
 
   async findManyWithPagination({
@@ -60,7 +65,7 @@ export class UsersService {
       };
     }
 
-    return await this.usersModel
+    const users = await this.usersModel
       .find(where)
       .sort(
         sortOptions?.reduce(
@@ -73,7 +78,15 @@ export class UsersService {
         ),
       )
       .skip((paginationOptions.page - 1) * paginationOptions.limit)
-      .limit(paginationOptions.limit);
+      .limit(paginationOptions.limit)
+      .lean();
+
+    return users.map(user => {
+      // Ensure clean JSON serialization
+      const cleanUser = JSON.parse(JSON.stringify(user));
+      cleanUser._id = user._id.toString();
+      return cleanUser;
+    });
   }
 
   async findById(id: string): Promise<NullableType<UserSchemaClass>> {
@@ -150,9 +163,11 @@ export class UsersService {
       .select('_id email firstName lastName role')
       .lean();
     
-    return users.map(user => ({
-      ...user,
-      _id: user._id.toString(),
-    }));
+    return users.map(user => {
+      // Ensure clean JSON serialization
+      const cleanUser = JSON.parse(JSON.stringify(user));
+      cleanUser._id = user._id.toString();
+      return cleanUser;
+    });
   }
 }
