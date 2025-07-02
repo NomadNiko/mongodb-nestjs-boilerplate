@@ -25,8 +25,13 @@ export class ConversationsService {
     // Add current user to participants if not already included
     const allParticipantIds = [...new Set([...participantIds, currentUserId])];
     
-    // Convert string IDs to ObjectIds
-    const participantObjectIds = allParticipantIds.map(id => new Types.ObjectId(id));
+    // Validate and convert string IDs to ObjectIds
+    const participantObjectIds = allParticipantIds.map(id => {
+      if (!Types.ObjectId.isValid(id)) {
+        throw new BadRequestException(`Invalid participant ID: ${id}`);
+      }
+      return new Types.ObjectId(id);
+    });
     
     // Check if a conversation with exact same participants already exists
     const existingConversation = await this.conversationModel
@@ -165,7 +170,7 @@ export class ConversationsService {
     
     const searchRegex = new RegExp(searchTerm, 'i');
     
-    return this.userModel
+    const users = await this.userModel
       .find({
         $or: [
           { email: searchRegex },
@@ -176,7 +181,13 @@ export class ConversationsService {
       .select('_id email firstName lastName role')
       .limit(20)
       .lean()
-      .exec() as Promise<UserSchemaDocument[]>;
+      .exec() as UserSchemaDocument[];
+
+    // Ensure _id is always a string
+    return users.map(user => ({
+      ...user,
+      _id: user._id.toString(),
+    }));
   }
 
   async remove(conversationId: string, userId: string): Promise<void> {
