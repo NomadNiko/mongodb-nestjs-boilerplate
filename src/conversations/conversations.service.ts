@@ -163,7 +163,7 @@ export class ConversationsService {
     return populatedMessage;
   }
 
-  async searchUsers(searchTerm: string): Promise<UserSchemaDocument[]> {
+  async searchUsers(searchTerm: string): Promise<any[]> {
     if (!searchTerm || searchTerm.trim().length === 0) {
       return [];
     }
@@ -181,12 +181,15 @@ export class ConversationsService {
       .select('_id email firstName lastName role')
       .limit(20)
       .lean()
-      .exec() as UserSchemaDocument[];
+      .exec();
 
-    // Ensure _id is always a string
+    // Ensure _id is always a string for React Native compatibility
     return users.map(user => ({
-      ...user,
       _id: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
     }));
   }
 
