@@ -180,4 +180,30 @@ export class UsersService {
       return cleanUser;
     });
   }
+
+  async searchUsers(searchTerm: string): Promise<UserSchemaClass[]> {
+    if (!searchTerm) return [];
+    
+    const regex = new RegExp(searchTerm, 'i'); // Case insensitive search
+    
+    const users = await this.usersModel
+      .find({
+        'status._id': '1', // Only active users
+        $or: [
+          { firstName: { $regex: regex } },
+          { lastName: { $regex: regex } },
+          { email: { $regex: regex } },
+        ],
+      })
+      .select('_id email firstName lastName role')
+      .limit(20) // Limit results for performance
+      .lean();
+    
+    return users.map(user => {
+      // Ensure clean JSON serialization
+      const cleanUser = JSON.parse(JSON.stringify(user));
+      cleanUser._id = user._id.toString();
+      return cleanUser;
+    });
+  }
 }

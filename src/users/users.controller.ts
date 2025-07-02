@@ -72,6 +72,16 @@ export class UsersController {
   }
 
   @ApiOkResponse({
+    type: [UserSchemaClass],
+    description: 'List of users matching the search criteria',
+  })
+  @Get('search')
+  @HttpCode(HttpStatus.OK)
+  async searchUsers(@Query('q') searchTerm: string): Promise<UserSchemaClass[]> {
+    return this.usersService.searchUsers(searchTerm || '');
+  }
+
+  @ApiOkResponse({
     type: InfinityPaginationResponse(UserSchemaClass),
   })
   @SerializeOptions({

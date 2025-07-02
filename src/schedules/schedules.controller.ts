@@ -13,13 +13,19 @@ import {
   SerializeOptions,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { QueryScheduleDto } from './dto/query-schedule.dto';
 import { ScheduleDto } from './dto/schedule.dto';
+import { ScheduleShiftDto } from '../schedule-shifts/dto/schedule-shift.dto';
 
 @ApiTags('Schedules')
 @ApiBearerAuth()
@@ -30,10 +36,10 @@ export class SchedulesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new schedule' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'The schedule has been successfully created.',
-    type: ScheduleDto
+    type: ScheduleDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async create(
@@ -45,10 +51,10 @@ export class SchedulesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all schedules with optional filtering' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return all schedules.',
-    type: [ScheduleDto]
+    type: [ScheduleDto],
   })
   async findAll(@Query() queryDto: QueryScheduleDto): Promise<any[]> {
     return this.schedulesService.findAll(queryDto);
@@ -56,10 +62,10 @@ export class SchedulesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a schedule by id' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return the schedule.',
-    type: ScheduleDto
+    type: ScheduleDto,
   })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
   async findOne(@Param('id') id: string): Promise<any> {
@@ -68,10 +74,10 @@ export class SchedulesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a schedule' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'The schedule has been successfully updated.',
-    type: ScheduleDto
+    type: ScheduleDto,
   })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
   async update(
@@ -83,7 +89,10 @@ export class SchedulesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a schedule' })
-  @ApiResponse({ status: 204, description: 'The schedule has been successfully deleted.' })
+  @ApiResponse({
+    status: 204,
+    description: 'The schedule has been successfully deleted.',
+  })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
@@ -92,13 +101,29 @@ export class SchedulesController {
 
   @Patch(':id/publish')
   @ApiOperation({ summary: 'Publish a schedule' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'The schedule has been successfully published.',
-    type: ScheduleDto
+    type: ScheduleDto,
   })
   @ApiResponse({ status: 404, description: 'Schedule not found' })
   async publish(@Param('id') id: string): Promise<any> {
     return this.schedulesService.publish(id);
+  }
+
+  @Get('shifts/user/:userId/published')
+  @ApiOperation({
+    summary: 'Get all published scheduled shifts for a specific user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all published scheduled shifts for the user.',
+    type: [ScheduleShiftDto],
+  })
+  @ApiResponse({ status: 404, description: 'User or shifts not found' })
+  async getPublishedShiftsByUserId(
+    @Param('userId') userId: string,
+  ): Promise<any[]> {
+    return this.schedulesService.findPublishedShiftsByUserId(userId);
   }
 }
