@@ -129,6 +129,28 @@ export class ConversationsController {
     return this.conversationsService.sendMessage(id, sendMessageDto, req.user.id);
   }
 
+  @Get('users/search')
+  @ApiOperation({ summary: 'Search users to start conversations with' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return users matching the search criteria.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          email: { type: 'string' },
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+        },
+      },
+    },
+  })
+  async searchUsers(@Query('q') searchTerm: string): Promise<any[]> {
+    return this.conversationsService.searchUsers(searchTerm || '');
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a conversation' })
   @ApiResponse({

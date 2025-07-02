@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConversationSchemaClass, ConversationSchemaDocument } from './schemas/conversation.schema';
 import { MessageSchemaClass, MessageSchemaDocument } from './schemas/message.schema';
+import { UserSchemaClass, UserSchemaDocument } from '../users/schemas/user.schema';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { QueryMessagesDto } from './dto/query-messages.dto';
@@ -14,6 +15,8 @@ export class ConversationsService {
     private conversationModel: Model<ConversationSchemaDocument>,
     @InjectModel(MessageSchemaClass.name)
     private messageModel: Model<MessageSchemaDocument>,
+    @InjectModel(UserSchemaClass.name)
+    private userModel: Model<UserSchemaDocument>,
   ) {}
 
   async create(createConversationDto: CreateConversationDto, currentUserId: string): Promise<ConversationSchemaDocument> {
@@ -153,6 +156,27 @@ export class ConversationsService {
       throw new Error('Failed to retrieve saved message');
     }
     return populatedMessage;
+  }
+
+  async searchUsers(searchTerm: string): Promise<UserSchemaDocument[]> {
+    if (!searchTerm || searchTerm.trim().length === 0) {
+      return [];
+    }
+    
+    const searchRegex = new RegExp(searchTerm, 'i');
+    
+    return this.userModel
+      .find({
+        $or: [
+          { email: searchRegex },
+          { firstName: searchRegex },
+          { lastName: searchRegex },
+        ],
+      })
+      .select('_id email firstName lastName role')
+      .limit(20)
+      .lean()
+      .exec() as Promise<UserSchemaDocument[]>;
   }
 
   async remove(conversationId: string, userId: string): Promise<void> {

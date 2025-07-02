@@ -77,8 +77,7 @@ export class UsersController {
   })
   @Get('search')
   @HttpCode(HttpStatus.OK)
-  @Roles() // Clear the admin role requirement
-  @UseGuards(AuthGuard('jwt')) // Override class-level guards - allow all authenticated users
+  @UseGuards(AuthGuard('jwt')) // Only require JWT authentication, no role check
   async searchUsers(@Query('q') searchTerm: string): Promise<UserSchemaClass[]> {
     return this.usersService.searchUsers(searchTerm || '');
   }
