@@ -77,7 +77,8 @@ export class UsersController {
   })
   @Get('search')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt')) // Override class-level admin restriction - allow all authenticated users
+  @Roles() // Clear the admin role requirement
+  @UseGuards(AuthGuard('jwt')) // Override class-level guards - allow all authenticated users
   async searchUsers(@Query('q') searchTerm: string): Promise<UserSchemaClass[]> {
     return this.usersService.searchUsers(searchTerm || '');
   }
