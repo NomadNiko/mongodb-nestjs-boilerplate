@@ -38,7 +38,7 @@ export class ConversationsService {
       .findOne({
         participants: { $all: participantObjectIds, $size: participantObjectIds.length }
       })
-      .populate('participants', '_id email firstName lastName role')
+      .populate('participants', '_id email firstName lastName role avatar')
       .lean()
       .exec() as ConversationSchemaDocument;
     
@@ -56,7 +56,7 @@ export class ConversationsService {
     const savedConversation = await conversation.save();
     const populatedConversation = await this.conversationModel
       .findById(savedConversation._id)
-      .populate('participants', '_id email firstName lastName role')
+      .populate('participants', '_id email firstName lastName role avatar')
       .lean();
     if (!populatedConversation) {
       throw new Error('Failed to retrieve saved conversation');
@@ -69,7 +69,7 @@ export class ConversationsService {
     
     return this.conversationModel
       .find({ participants: userObjectId })
-      .populate('participants', '_id email firstName lastName role')
+      .populate('participants', '_id email firstName lastName role avatar')
       .sort({ lastMessageAt: -1 })
       .lean()
       .exec() as Promise<ConversationSchemaDocument[]>;
@@ -84,7 +84,7 @@ export class ConversationsService {
         _id: conversationObjectId,
         participants: userObjectId, // Ensure user is part of conversation
       })
-      .populate('participants', '_id email firstName lastName role')
+      .populate('participants', '_id email firstName lastName role avatar')
       .lean()
       .exec() as ConversationSchemaDocument;
     
@@ -112,7 +112,7 @@ export class ConversationsService {
     const [messages, total] = await Promise.all([
       this.messageModel
         .find({ conversationId: conversationObjectId })
-        .populate('senderId', '_id email firstName lastName role')
+        .populate('senderId', '_id email firstName lastName role avatar')
         .sort({ timestamp: -1 }) // Most recent first
         .skip(skip)
         .limit(limit)
@@ -178,7 +178,7 @@ export class ConversationsService {
           { lastName: searchRegex },
         ],
       })
-      .select('_id email firstName lastName role')
+      .select('_id email firstName lastName role avatar')
       .limit(20)
       .lean()
       .exec();
@@ -190,6 +190,7 @@ export class ConversationsService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      avatar: user.avatar,
     }));
   }
 

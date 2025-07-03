@@ -43,6 +43,10 @@ export class CreateUserDto {
   @IsOptional()
   photo?: FileDto | null;
 
+  @ApiPropertyOptional({ example: 1, type: Number, description: 'Avatar number (1-20)' })
+  @IsOptional()
+  avatar?: number | null;
+
   @ApiPropertyOptional({ type: RoleDto })
   @IsOptional()
   @Type(() => RoleDto)

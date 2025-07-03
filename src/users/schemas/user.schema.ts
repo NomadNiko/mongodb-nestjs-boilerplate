@@ -53,6 +53,13 @@ export class UserSchemaClass extends EntityDocumentHelper {
   photo?: FileSchemaClass | null;
 
   @Prop({
+    type: Number,
+    min: 1,
+    default: null,
+  })
+  avatar?: number | null;
+
+  @Prop({
     type: RoleSchema,
   })
   role?: RoleSchema | null;
