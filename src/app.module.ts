@@ -28,6 +28,7 @@ import { SchedulesModule } from './schedules/schedules.module';
 import { ScheduleShiftsModule } from './schedule-shifts/schedule-shifts.module';
 import { UserShiftsModule } from './user-shifts/user-shifts.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { TimeClockEntriesModule } from './time-clock-entries/time-clock-entries.module';
 import { SchedulesService } from './schedules/schedules.service';
 import { ScheduleShiftsService } from './schedule-shifts/schedule-shifts.service';
 
@@ -88,6 +89,7 @@ import { ScheduleShiftsService } from './schedule-shifts/schedule-shifts.service
     ScheduleShiftsModule,
     UserShiftsModule,
     ConversationsModule,
+    TimeClockEntriesModule,
   ],
 })
 export class AppModule implements OnModuleInit {
