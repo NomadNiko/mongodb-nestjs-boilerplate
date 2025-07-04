@@ -9,6 +9,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -23,17 +24,9 @@ import { TimeClockEntriesService } from './time-clock-entries.service';
 import { CreateTimeClockEntryDto } from './dto/create-time-clock-entry.dto';
 import { UpdateTimeClockEntryDto } from './dto/update-time-clock-entry.dto';
 import { TimeClockQueryDto } from './dto/time-clock-query.dto';
-import { TimeClockEntryDto } from './dto/time-clock-entry.dto';
-import { 
-  TimeClockStatusDto, 
-  TimeClockSummaryDto, 
-  EmployeeTimeClockSummaryDto,
-  ActiveEmployeeDto 
-} from './dto/time-clock-summary.dto';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
-
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 @ApiTags('Time Clock')
@@ -54,7 +47,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully clocked in',
-    type: TimeClockEntryDto,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -72,7 +64,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Successfully clocked out',
-    type: TimeClockEntryDto,
   })
   @ApiResponse({ status: 400, description: 'Employee is not currently clocked in' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -88,10 +79,9 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Current time clock status',
-    type: TimeClockStatusDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getCurrentStatus(@Request() req: any): Promise<TimeClockStatusDto> {
+  async getCurrentStatus(@Request() req: any): Promise<any> {
     return this.timeClockEntriesService.getCurrentStatus(req.user.id);
   }
 
@@ -100,7 +90,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time entries for the current user',
-    type: [TimeClockEntryDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
@@ -123,7 +112,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time entry details',
-    type: TimeClockEntryDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Time entry not found' })
@@ -146,7 +134,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'All time entries',
-    type: [TimeClockEntryDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
@@ -172,7 +159,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'List of currently clocked in employees',
-    type: [ActiveEmployeeDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
@@ -187,7 +173,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time clock summary statistics',
-    type: TimeClockSummaryDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
@@ -195,7 +180,7 @@ export class TimeClockEntriesController {
   @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
   async getSummaryStatistics(
     @Query() queryDto: TimeClockQueryDto,
-  ): Promise<TimeClockSummaryDto> {
+  ): Promise<any> {
     return this.timeClockEntriesService.getSummaryStatistics(queryDto);
   }
 
@@ -206,7 +191,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time entries for the specified employee',
-    type: [TimeClockEntryDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
@@ -233,7 +217,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time clock summary for the specified employee',
-    type: EmployeeTimeClockSummaryDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
@@ -244,7 +227,7 @@ export class TimeClockEntriesController {
   async getEmployeeSummary(
     @Param('employeeId') employeeId: string,
     @Query() queryDto: TimeClockQueryDto,
-  ): Promise<EmployeeTimeClockSummaryDto> {
+  ): Promise<any> {
     return this.timeClockEntriesService.getEmployeeSummaryStatistics(employeeId, queryDto);
   }
 
@@ -255,14 +238,13 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Current time clock status for the specified employee',
-    type: TimeClockStatusDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiParam({ name: 'employeeId', description: 'Employee ID' })
   async getEmployeeStatus(
     @Param('employeeId') employeeId: string,
-  ): Promise<TimeClockStatusDto> {
+  ): Promise<any> {
     return this.timeClockEntriesService.getCurrentStatus(employeeId);
   }
 
@@ -273,7 +255,6 @@ export class TimeClockEntriesController {
   @ApiResponse({
     status: 200,
     description: 'Time entry details',
-    type: TimeClockEntryDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
