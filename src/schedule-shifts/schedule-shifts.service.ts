@@ -72,7 +72,7 @@ export class ScheduleShiftsService {
     const shifts = await this.scheduleShiftModel
       .find({ scheduleId })
       .populate('shiftTypeId')
-      .populate('userId', 'firstName lastName role')
+      .populate('userId', 'firstName lastName role avatar')
       .sort({ date: 1, order: 1 })
       .exec();
 
@@ -135,7 +135,7 @@ export class ScheduleShiftsService {
     const updatedShift = await this.scheduleShiftModel
       .findByIdAndUpdate(shiftId, updateData, { new: true })
       .populate('shiftTypeId')
-      .populate('userId', 'firstName lastName role')
+      .populate('userId', 'firstName lastName role avatar')
       .exec();
 
     if (!updatedShift) {
@@ -175,7 +175,7 @@ export class ScheduleShiftsService {
     const updatedShift = await this.scheduleShiftModel
       .findByIdAndUpdate(shiftId, updateData, { new: true })
       .populate('shiftTypeId')
-      .populate('userId', 'firstName lastName role')
+      .populate('userId', 'firstName lastName role avatar')
       .exec();
 
     if (!updatedShift) {
@@ -476,7 +476,7 @@ export class ScheduleShiftsService {
     const populated = await this.scheduleShiftModel
       .findById(saved._id)
       .populate('shiftTypeId')
-      .populate('userId', 'firstName lastName role')
+      .populate('userId', 'firstName lastName role avatar')
       .session(session)
       .exec();
 
@@ -561,7 +561,7 @@ export class ScheduleShiftsService {
       const updatedShift = await this.scheduleShiftModel
         .findByIdAndUpdate(operation.id, updateData, { new: true, session })
         .populate('shiftTypeId')
-        .populate('userId', 'firstName lastName role')
+        .populate('userId', 'firstName lastName role avatar')
         .exec();
 
       if (!updatedShift) {
