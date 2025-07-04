@@ -264,4 +264,111 @@ export class ConversationsService {
     // Delete the conversation
     await this.conversationModel.findByIdAndDelete(conversationObjectId);
   }
+
+  async addParticipant(conversationId: string, participantId: string, currentUserId: string): Promise<ConversationSchemaDocument> {
+    const userObjectId = new Types.ObjectId(currentUserId);
+    const conversationObjectId = new Types.ObjectId(conversationId);
+    const participantObjectId = new Types.ObjectId(participantId);
+
+    // Verify user has access to conversation
+    const conversation = await this.conversationModel.findOne({
+      _id: conversationObjectId,
+      participants: userObjectId,
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found or you do not have access to it');
+    }
+
+    // Check if participant is already in the conversation
+    if (conversation.participants.some(p => p.toString() === participantId)) {
+      throw new BadRequestException('User is already a participant in this conversation');
+    }
+
+    // Get the participant user info for the system message
+    const participantUser = await this.userModel.findById(participantObjectId).select('firstName lastName email').lean();
+    if (!participantUser) {
+      throw new NotFoundException('Participant user not found');
+    }
+
+    // Add participant to conversation
+    const updatedConversation = await this.conversationModel
+      .findByIdAndUpdate(
+        conversationObjectId,
+        { 
+          $push: { participants: participantObjectId },
+          lastMessageAt: new Date(),
+        },
+        { new: true }
+      )
+      .populate('participants', '_id email firstName lastName role avatar')
+      .lean()
+      .exec() as ConversationSchemaDocument;
+
+    if (!updatedConversation) {
+      throw new NotFoundException('Failed to update conversation');
+    }
+
+    // Create system message announcing the addition
+    const userName = participantUser.firstName && participantUser.lastName 
+      ? `${participantUser.firstName} ${participantUser.lastName}`
+      : participantUser.email;
+
+    await this.messageModel.create({
+      conversationId: conversationObjectId,
+      content: `${userName} was added to the chat!`,
+      type: 'system',
+      timestamp: new Date(),
+    });
+
+    return updatedConversation;
+  }
+
+  async removeParticipant(conversationId: string, participantId: string, currentUserId: string): Promise<ConversationSchemaDocument> {
+    const userObjectId = new Types.ObjectId(currentUserId);
+    const conversationObjectId = new Types.ObjectId(conversationId);
+    const participantObjectId = new Types.ObjectId(participantId);
+
+    // Verify user has access to conversation
+    const conversation = await this.conversationModel.findOne({
+      _id: conversationObjectId,
+      participants: userObjectId,
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found or you do not have access to it');
+    }
+
+    // Check if participant is actually in the conversation
+    if (!conversation.participants.some(p => p.toString() === participantId)) {
+      throw new BadRequestException('User is not a participant in this conversation');
+    }
+
+    // Prevent removing the last participant
+    if (conversation.participants.length <= 1) {
+      throw new BadRequestException('Cannot remove the last participant from a conversation');
+    }
+
+    // Remove participant from conversation
+    const updatedConversation = await this.conversationModel
+      .findByIdAndUpdate(
+        conversationObjectId,
+        { 
+          $pull: { participants: participantObjectId },
+          lastMessageAt: new Date(),
+        },
+        { new: true }
+      )
+      .populate('participants', '_id email firstName lastName role avatar')
+      .lean()
+      .exec() as ConversationSchemaDocument;
+
+    if (!updatedConversation) {
+      throw new NotFoundException('Failed to update conversation');
+    }
+
+    // No system message for removal (silent as requested)
+
+    return updatedConversation;
+  }
 }

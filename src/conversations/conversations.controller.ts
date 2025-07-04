@@ -27,6 +27,8 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { QueryMessagesDto } from './dto/query-messages.dto';
 import { ConversationDto } from './dto/conversation.dto';
 import { MessageDto } from './dto/message.dto';
+import { AddParticipantDto } from './dto/add-participant.dto';
+import { RemoveParticipantDto } from './dto/remove-participant.dto';
 
 @ApiTags('Conversations')
 @ApiBearerAuth()
@@ -189,5 +191,53 @@ export class ConversationsController {
   })
   async remove(@Param('id') id: string, @Request() req: any): Promise<void> {
     await this.conversationsService.remove(id, req.user.id);
+  }
+
+  @Post(':id/participants')
+  @ApiOperation({ summary: 'Add a participant to a conversation' })
+  @ApiResponse({
+    status: 201,
+    description: 'The participant has been successfully added.',
+    type: ConversationDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'Conversation ID',
+  })
+  async addParticipant(
+    @Param('id') id: string,
+    @Body() addParticipantDto: AddParticipantDto,
+    @Request() req: any,
+  ): Promise<any> {
+    return this.conversationsService.addParticipant(id, addParticipantDto.participantId, req.user.id);
+  }
+
+  @Delete(':id/participants/:participantId')
+  @ApiOperation({ summary: 'Remove a participant from a conversation' })
+  @ApiResponse({
+    status: 200,
+    description: 'The participant has been successfully removed.',
+    type: ConversationDto,
+  })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'Conversation ID',
+  })
+  @ApiParam({
+    name: 'participantId',
+    type: String,
+    description: 'Participant ID to remove',
+  })
+  async removeParticipant(
+    @Param('id') id: string,
+    @Param('participantId') participantId: string,
+    @Request() req: any,
+  ): Promise<any> {
+    return this.conversationsService.removeParticipant(id, participantId, req.user.id);
   }
 }

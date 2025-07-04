@@ -24,15 +24,22 @@ export class MessageSchemaClass extends EntityDocumentHelper {
   @Prop({
     type: Types.ObjectId,
     ref: UserSchemaClass.name,
-    required: true,
+    required: false, // Optional for system messages
   })
-  senderId: Types.ObjectId;
+  senderId?: Types.ObjectId;
 
   @Prop({
     type: String,
     required: true,
   })
   content: string;
+
+  @Prop({
+    type: String,
+    enum: ['user', 'system'],
+    default: 'user',
+  })
+  type: string;
 
   @Prop({
     type: Date,
