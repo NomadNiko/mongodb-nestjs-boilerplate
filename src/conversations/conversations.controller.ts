@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Query,
+  Patch,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -21,6 +22,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ConversationsService } from './conversations.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
+import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { QueryMessagesDto } from './dto/query-messages.dto';
 import { ConversationDto } from './dto/conversation.dto';
@@ -149,6 +151,27 @@ export class ConversationsController {
   })
   async searchUsers(@Query('q') searchTerm: string): Promise<any[]> {
     return this.conversationsService.searchUsers(searchTerm || '');
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a conversation' })
+  @ApiResponse({
+    status: 200,
+    description: 'The conversation has been successfully updated.',
+    type: ConversationDto,
+  })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'Conversation ID',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateConversationDto: UpdateConversationDto,
+    @Request() req: any,
+  ): Promise<any> {
+    return this.conversationsService.update(id, updateConversationDto, req.user.id);
   }
 
   @Delete(':id')

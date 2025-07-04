@@ -213,6 +213,38 @@ export class ConversationsService {
     }));
   }
 
+  async update(conversationId: string, updateData: { name?: string }, userId: string): Promise<ConversationSchemaDocument> {
+    const userObjectId = new Types.ObjectId(userId);
+    const conversationObjectId = new Types.ObjectId(conversationId);
+    
+    // Verify user has access to conversation
+    const conversation = await this.conversationModel.findOne({
+      _id: conversationObjectId,
+      participants: userObjectId,
+    });
+    
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found or you do not have access to it');
+    }
+    
+    // Update the conversation
+    const updatedConversation = await this.conversationModel
+      .findByIdAndUpdate(
+        conversationObjectId, 
+        updateData, 
+        { new: true }
+      )
+      .populate('participants', '_id email firstName lastName role avatar')
+      .lean()
+      .exec() as ConversationSchemaDocument;
+    
+    if (!updatedConversation) {
+      throw new NotFoundException('Failed to update conversation');
+    }
+    
+    return updatedConversation;
+  }
+
   async remove(conversationId: string, userId: string): Promise<void> {
     const userObjectId = new Types.ObjectId(userId);
     const conversationObjectId = new Types.ObjectId(conversationId);
