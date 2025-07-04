@@ -27,7 +27,7 @@ export class TimeClockEntriesService {
   /**
    * Clock in an employee
    */
-  async clockIn(employeeId: string, createDto: CreateTimeClockEntryDto): Promise<TimeClockEntrySchemaDocument> {
+  async clockIn(employeeId: string, createDto: CreateTimeClockEntryDto): Promise<any> {
     const employeeObjectId = new Types.ObjectId(employeeId);
 
     // Check if employee is already clocked in
@@ -50,13 +50,14 @@ export class TimeClockEntriesService {
 
     await entry.save();
 
-    return entry.populate('employee', '_id email firstName lastName avatar');
+    const populatedEntry = await entry.populate('employee', '_id email firstName lastName avatar');
+    return populatedEntry.toObject();
   }
 
   /**
    * Clock out an employee
    */
-  async clockOut(employeeId: string, updateDto: UpdateTimeClockEntryDto): Promise<TimeClockEntrySchemaDocument> {
+  async clockOut(employeeId: string, updateDto: UpdateTimeClockEntryDto): Promise<any> {
     const employeeObjectId = new Types.ObjectId(employeeId);
 
     // Find the active clock-in entry
@@ -84,7 +85,8 @@ export class TimeClockEntriesService {
 
     await entry.save();
 
-    return entry.populate('employee', '_id email firstName lastName avatar');
+    const populatedEntry = await entry.populate('employee', '_id email firstName lastName avatar');
+    return populatedEntry.toObject();
   }
 
   /**
@@ -123,7 +125,7 @@ export class TimeClockEntriesService {
   async getEmployeeTimeEntries(
     employeeId: string, 
     queryDto: TimeClockQueryDto
-  ): Promise<{ entries: TimeClockEntrySchemaDocument[]; total: number; page: number; limit: number }> {
+  ): Promise<{ entries: any[]; total: number; page: number; limit: number }> {
     const employeeObjectId = new Types.ObjectId(employeeId);
     const { startDate, endDate, page = 1, limit = 50 } = queryDto;
 
@@ -156,7 +158,7 @@ export class TimeClockEntriesService {
     ]);
 
     return {
-      entries: entries as TimeClockEntrySchemaDocument[],
+      entries,
       total,
       page,
       limit,
@@ -168,7 +170,7 @@ export class TimeClockEntriesService {
    */
   async getAllTimeEntries(
     queryDto: TimeClockQueryDto
-  ): Promise<{ entries: TimeClockEntrySchemaDocument[]; total: number; page: number; limit: number }> {
+  ): Promise<{ entries: any[]; total: number; page: number; limit: number }> {
     const { startDate, endDate, employeeId, page = 1, limit = 50 } = queryDto;
 
     const filter: any = {};
@@ -205,7 +207,7 @@ export class TimeClockEntriesService {
     ]);
 
     return {
-      entries: entries as TimeClockEntrySchemaDocument[],
+      entries,
       total,
       page,
       limit,
@@ -361,7 +363,7 @@ export class TimeClockEntriesService {
   /**
    * Get a specific time entry by ID
    */
-  async getTimeEntry(entryId: string, employeeId?: string): Promise<TimeClockEntrySchemaDocument> {
+  async getTimeEntry(entryId: string, employeeId?: string): Promise<any> {
     const entryObjectId = new Types.ObjectId(entryId);
     const filter: any = { _id: entryObjectId };
 
@@ -379,7 +381,7 @@ export class TimeClockEntriesService {
       throw new NotFoundException('Time entry not found');
     }
 
-    return entry as TimeClockEntrySchemaDocument;
+    return entry;
   }
 
   /**
