@@ -64,15 +64,34 @@ export class ConversationsService {
     return populatedConversation as ConversationSchemaDocument;
   }
 
-  async findUserConversations(userId: string): Promise<ConversationSchemaDocument[]> {
+  async findUserConversations(userId: string): Promise<any[]> {
     const userObjectId = new Types.ObjectId(userId);
     
-    return this.conversationModel
+    const conversations = await this.conversationModel
       .find({ participants: userObjectId })
       .populate('participants', '_id email firstName lastName role avatar')
       .sort({ lastMessageAt: -1 })
       .lean()
-      .exec() as Promise<ConversationSchemaDocument[]>;
+      .exec();
+    
+    // Add last message to each conversation
+    const conversationsWithLastMessage = await Promise.all(
+      conversations.map(async (conversation) => {
+        const lastMessage = await this.messageModel
+          .findOne({ conversationId: conversation._id })
+          .populate('senderId', '_id email firstName lastName role avatar')
+          .sort({ timestamp: -1 })
+          .lean()
+          .exec();
+        
+        return {
+          ...conversation,
+          lastMessage,
+        };
+      })
+    );
+    
+    return conversationsWithLastMessage;
   }
 
   async findOne(conversationId: string, userId: string): Promise<ConversationSchemaDocument> {

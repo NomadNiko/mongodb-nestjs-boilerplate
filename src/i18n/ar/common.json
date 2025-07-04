@@ -1,5 +1,6 @@
 {
   "confirmEmail": "تأكيد البريد الإلكتروني",
   "resetPassword": "إعادة تعيين كلمة المرور",
-  "inviteUser": "تمت دعوتك إلى HostelShifts"
+  "inviteUser": "تمت دعوتك إلى HostelShifts",
+  "passwordChanged": "تم تغيير كلمة المرور"
 }

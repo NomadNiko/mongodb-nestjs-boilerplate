@@ -1,5 +1,6 @@
 {
   "confirmEmail": "Підтвердити email",
   "resetPassword": "Скинути пароль",
-  "inviteUser": "Вас запросили до HostelShifts"
+  "inviteUser": "Вас запросили до HostelShifts",
+  "passwordChanged": "Пароль змінено"
 }

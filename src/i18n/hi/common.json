@@ -1,5 +1,6 @@
 {
   "confirmEmail": "ईमेल सुनिश्चित करें",
   "resetPassword": "पासवर्ड रीसेट करें",
-  "inviteUser": "आपको HostelShifts में आमंत्रित किया गया है"
+  "inviteUser": "आपको HostelShifts में आमंत्रित किया गया है",
+  "passwordChanged": "पासवर्ड बदल दिया गया"
 }

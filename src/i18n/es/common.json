@@ -1,5 +1,6 @@
 {
   "confirmEmail": "Confirmar correo electrónico",
   "resetPassword": "Restablecer contraseña",
-  "inviteUser": "Has sido invitado a HostelShifts"
+  "inviteUser": "Has sido invitado a HostelShifts",
+  "passwordChanged": "Contraseña Cambiada"
 }

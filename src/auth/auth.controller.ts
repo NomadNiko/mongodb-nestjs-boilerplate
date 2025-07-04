@@ -27,11 +27,6 @@ import { UserSchemaClass } from '../users/schemas/user.schema';
 import { RefreshResponseDto } from './dto/refresh-response.dto';
 import { AuthInviteUserDto } from './dto/auth-invite-user.dto';
 import { AuthAcceptInviteDto } from './dto/auth-accept-invite.dto';
-import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
-import { AdminForcePasswordChangeDto } from './dto/admin-force-password-change.dto';
-import { Roles } from '../roles/roles.decorator';
-import { RoleEnum } from '../roles/roles.enum';
-import { RolesGuard } from '../roles/roles.guard';
 
 @ApiTags('Auth')
 @Controller({
@@ -181,26 +176,4 @@ export class AuthController {
     return this.service.acceptInvite(acceptInviteDto);
   }
 
-  @ApiBearerAuth()
-  @Roles(RoleEnum.admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Post('admin/reset-password/:userId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async adminResetPassword(
-    @Param('userId') userId: string,
-    @Body() resetPasswordDto: AdminResetPasswordDto,
-  ): Promise<void> {
-    return this.service.adminResetPassword(userId, resetPasswordDto.newPassword);
-  }
-
-  @ApiBearerAuth()
-  @Roles(RoleEnum.admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Post('admin/force-password-change/:userId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async adminForcePasswordChange(
-    @Param('userId') userId: string,
-  ): Promise<void> {
-    return this.service.adminForcePasswordChange(userId);
-  }
 }
