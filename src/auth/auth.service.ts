@@ -776,4 +776,79 @@ export class AuthService {
       user,
     };
   }
+
+  async adminResetPassword(userId: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException({
+        status: HttpStatus.NOT_FOUND,
+        error: 'notFound',
+      });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update the user's password
+    await this.usersService.update(userId, {
+      password: hashedPassword,
+    });
+
+    // Send email notification about password change
+    await this.mailService.passwordChanged({
+      to: user.email!,
+      data: {
+        name: (user.firstName || user.email)!,
+      },
+    });
+  }
+
+  async adminForcePasswordChange(userId: string): Promise<void> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException({
+        status: HttpStatus.NOT_FOUND,
+        error: 'notFound',
+      });
+    }
+
+    // Generate a random temporary password
+    const tempPassword = randomStringGenerator();
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+    // Update the user's password to the temporary one
+    await this.usersService.update(userId, {
+      password: hashedPassword,
+    });
+
+    // Generate password reset token
+    const tokenExpiresIn = this.configService.getOrThrow('auth.forgotExpires', {
+      infer: true,
+    });
+
+    const tokenExpires = Date.now() + ms(tokenExpiresIn);
+
+    const hash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    await this.usersService.update(user._id, {
+      hash,
+      hashExpires: new Date(tokenExpires),
+    } as any);
+
+    // Send password reset email (like forgot password flow)
+    await this.mailService.forgotPassword({
+      to: user.email!,
+      data: {
+        hash,
+        tokenExpires: tokenExpires,
+      },
+    });
+  }
 }

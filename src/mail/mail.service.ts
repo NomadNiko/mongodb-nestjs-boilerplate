@@ -214,4 +214,43 @@ export class MailService {
       },
     });
   }
+
+  async passwordChanged(mailData: MailData<{ name: string }>): Promise<void> {
+    const i18n = I18nContext.current();
+    let passwordChangedTitle: MaybeType<string>;
+    let text1: MaybeType<string>;
+    let text2: MaybeType<string>;
+
+    if (i18n) {
+      [passwordChangedTitle, text1, text2] = await Promise.all([
+        i18n.t('common.passwordChanged'),
+        i18n.t('password-changed.text1'),
+        i18n.t('password-changed.text2'),
+      ]);
+    }
+
+    await this.mailerService.sendMail({
+      to: mailData.to,
+      subject: passwordChangedTitle || 'Password Changed',
+      text: `Your password has been changed by an administrator.`,
+      templatePath: path.join(
+        this.configService.getOrThrow('app.workingDirectory', {
+          infer: true,
+        }),
+        'src',
+        'mail',
+        'mail-templates',
+        'password-changed.hbs',
+      ),
+      context: {
+        title: passwordChangedTitle || 'Password Changed',
+        app_name: this.configService.get('app.name', {
+          infer: true,
+        }),
+        name: mailData.data.name,
+        text1: text1 || `Hello ${mailData.data.name}!`,
+        text2: text2 || 'Your password has been changed by an administrator. If you did not request this change, please contact support immediately.',
+      },
+    });
+  }
 }
