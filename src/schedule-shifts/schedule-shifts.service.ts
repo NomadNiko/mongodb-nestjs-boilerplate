@@ -714,6 +714,7 @@ export class ScheduleShiftsService {
         id: shift.userId._id.toString(),
         firstName: shift.userId.firstName,
         lastName: shift.userId.lastName,
+        avatar: shift.userId.avatar,
         role: shift.userId.role,
       } : null,
       order: shift.order,
